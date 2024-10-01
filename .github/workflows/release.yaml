@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+    environment:
+      name: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +37,10 @@ jobs:
         working-directory: dist
 
       - name: Create checksum file
-        run: sha256sum * > SHA256SUMS
+        env:
+          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+        run: |
+          sha256sum * > SHA256SUMS
         working-directory: dist
 
       - name: List artifacts
