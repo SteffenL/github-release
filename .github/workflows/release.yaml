@@ -1,0 +1,38 @@
+name: Release
+on:
+  pull_request:
+    branches:
+      # Release preparation/support branches
+      - 'release/**'
+    types:
+      - closed
+defaults:
+  run:
+    shell: bash
+jobs:
+  publish:
+    if: github.event.pull_request.merged
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create dummy files for upload
+        run: |
+          echo "a" > a.txt
+          echo "b" > b.txt
+        working-directory: dist
+
+      - name: Create checksum file
+        run: sha256sum * > SHA256SUMS
+        working-directory: dist
+
+      - name: List artifacts
+        run: find dist/ || exit 1
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create --draft "${{ vars.release-tag }}" dist/* || exit 1
