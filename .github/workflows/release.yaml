@@ -1,6 +1,6 @@
 name: Release
 on:
-  pull_request:
+  pull_request_target:
     branches:
       # Release preparation/support branches
       - 'release/**'
@@ -10,7 +10,16 @@ defaults:
   run:
     shell: bash
 jobs:
-  publish:
+  vars:
+    runs-on: ubuntu-22.04
+    outputs:
+      release-version: ${{ steps.vars.outputs.release-version }}
+    steps:
+      - id: vars
+        run: |
+          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
+
+  publish-on-merge:
     if: github.event.pull_request.merged
     runs-on: ubuntu-22.04
     permissions:
@@ -35,4 +44,4 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create --draft "${{ vars.release-tag }}" dist/* || exit 1
+        run: gh release create --draft "${{ needs.vars.outputs.release-tag }}" dist/* || exit 1
