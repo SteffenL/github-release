@@ -19,13 +19,10 @@ jobs:
         run: |
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
-  publish-on-merge:
-    if: github.event.pull_request.merged
+  build:
+    needs:
+      - vars
     runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    environment:
-      name: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +32,33 @@ jobs:
           echo "a" > a.txt
           echo "b" > b.txt
         working-directory: dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-on-merge:
+    if: github.event.pull_request.merged
+    needs:
+      - build
+      - vars
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    environment:
+      name: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
 
       - name: Create checksum file
         env:
