@@ -1,9 +1,9 @@
 name: Release
 on:
-  pull_request_target:
+  pull_request:
     branches:
-      # Release preparation/support branches
-      - 'release/**'
+      # Main stable branch
+      - master
     types:
       - closed
 defaults:
@@ -19,11 +19,10 @@ jobs:
         run: |
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
-  publish-on-merge:
-    if: github.event.pull_request.merged
+  build:
+    needs:
+      - vars
     runs-on: ubuntu-22.04
-    permissions:
-      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,8 +33,39 @@ jobs:
           echo "b" > b.txt
         working-directory: dist
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-on-merge:
+    # Release preparation/support branche merged
+    if: github.event.pull_request.merged && startsWith(github.head_ref, 'release/')
+    needs:
+      - build
+      - vars
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    environment:
+      name: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+
       - name: Create checksum file
-        run: sha256sum * > SHA256SUMS
+        env:
+          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+        run: |
+          sha256sum * > SHA256SUMS
         working-directory: dist
 
       - name: List artifacts
