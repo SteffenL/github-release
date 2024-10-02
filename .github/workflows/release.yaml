@@ -58,10 +58,15 @@ jobs:
     steps:
       - name: Import PGP private key
         env:
+          PGP_KEY_ID: ${{ secrets.PGP_KEY_ID }}
           PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
         run: |
           gpg --import <<EOF
           ${PGP_PRIVATE_KEY}
+          EOF
+          gpg --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
+          5
+          y
           EOF
 
       - name: Checkout
@@ -76,9 +81,12 @@ jobs:
       - name: Create checksum file
         env:
           PGP_KEY_ID: ${{ secrets.PGP_KEY_ID }}
+          PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
         run: |
           sha256sum * > SHA256SUMS
-          gpg --local-user "${PGP_KEY_ID}" --detach-sign --armor SHA256SUMS
+          gpg --local-user "${PGP_KEY_ID}" --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
+          ${PGP_KEY_PASSPHRASE}
+          EOF
         working-directory: dist
 
       - name: List artifacts
