@@ -1,4 +1,4 @@
-name: Release
+name: PR closed
 on:
   pull_request:
     branches:
@@ -14,12 +14,10 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       release-version: ${{ steps.vars.outputs.release-version }}
-      signing-key-id: ${{ steps.vars.outputs.signing-key-id }}
     steps:
       - id: vars
         run: |
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
-          echo "signing-key-id=WebView Release Manager" >> "${GITHUB_OUTPUT}"
 
   build:
     needs:
