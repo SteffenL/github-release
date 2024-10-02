@@ -1,11 +1,12 @@
-name: PR closed
+name: CI
 on:
+  push:
+    branches:
+      - master
+      - 'release/**'
   pull_request:
     branches:
-      # Main stable branch
       - master
-    types:
-      - closed
 defaults:
   run:
     shell: bash
@@ -13,8 +14,11 @@ jobs:
   vars:
     runs-on: ubuntu-22.04
     outputs:
-      release-version: ${{ steps.vars.outputs.release-version }}
+      release-tag: ${{ steps.vars.outputs.release-tag }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - id: vars
         run: |
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
@@ -42,11 +46,22 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  publish-on-merge:
-    # Release preparation/support branche merged
-    if: github.event.pull_request.merged && startsWith(github.head_ref, 'release/')
+  build-pr:
+    if: github.event_name == 'pull_request'
     needs:
       - build
+      - vars
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Dummy task
+        run: echo Hello
+
+  create-release:
+    # Release preparation/support branche merged
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.head_ref, 'release/')
+    needs:
+      - build
+      - build-pr
       - vars
     runs-on: ubuntu-22.04
     permissions:
@@ -56,13 +71,13 @@ jobs:
     steps:
       - name: Import PGP private key
         env:
-          PGP_KEY_ID: ${{ secrets.PGP_KEY_ID }}
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
           PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
         run: |
-          gpg --import <<EOF
+          gpg --batch --import <<EOF
           ${PGP_PRIVATE_KEY}
           EOF
-          gpg --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
+          gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
           5
           y
           EOF
@@ -78,11 +93,11 @@ jobs:
 
       - name: Create checksum file
         env:
-          PGP_KEY_ID: ${{ secrets.PGP_KEY_ID }}
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
           PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
         run: |
           sha256sum * > SHA256SUMS
-          gpg --local-user "${PGP_KEY_ID}" --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
+          gpg --batch --pinentry-mode loopback --local-user "${PGP_KEY_ID}" --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
           ${PGP_KEY_PASSPHRASE}
           EOF
         working-directory: dist
@@ -90,7 +105,18 @@ jobs:
       - name: List artifacts
         run: find dist/ || exit 1
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-checksums
+          path: |
+            dist/*.asc
+            dist/*SUMS
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create --draft "${{ needs.vars.outputs.release-tag }}" dist/* || exit 1
+          RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
+        run: gh release create --draft "${RELEASE_TAG}" dist/* || exit 1
