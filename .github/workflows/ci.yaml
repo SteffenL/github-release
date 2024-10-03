@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - 'release/**'
+      - 'release-*'
   pull_request:
     branches:
       - master
@@ -42,7 +42,7 @@ jobs:
         run: echo Hello
 
   create-release-draft:
-    if: github.event_name == 'push' && startsWith(github.ref_name, 'release/') && !startsWith(github.ref_name, 'release/sync/')
+    if: github.event_name == 'push' && startsWith(github.ref_name, 'release-') && !endsWith(github.ref_name, '-sync')
     needs:
       - build
     runs-on: ubuntu-22.04
