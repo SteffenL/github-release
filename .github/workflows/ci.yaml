@@ -11,21 +11,7 @@ defaults:
   run:
     shell: bash
 jobs:
-  vars:
-    runs-on: ubuntu-22.04
-    outputs:
-      release-tag: ${{ steps.vars.outputs.release-tag }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - id: vars
-        run: |
-          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
-
   build:
-    needs:
-      - vars
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -50,24 +36,25 @@ jobs:
     if: github.event_name == 'pull_request'
     needs:
       - build
-      - vars
     runs-on: ubuntu-22.04
     steps:
       - name: Dummy task
         run: echo Hello
 
-  create-release:
-    if: github.event_name == 'push' && startsWith(github.head_ref, 'release/')
+  create-release-draft:
+    if: github.event_name == 'push' && startsWith(github.ref_name, 'release/') && !startsWith(github.ref_name, 'release/sync/')
     needs:
       - build
-      - build-pr
-      - vars
     runs-on: ubuntu-22.04
     permissions:
       contents: write
     environment:
       name: production
     steps:
+      - id: vars
+        run: |
+          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
+
       - name: Import PGP private key
         env:
           PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
@@ -128,5 +115,6 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
-        run: gh release create --draft "${RELEASE_TAG}" dist/* || exit 1
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_TAG: ${{ steps.vars.outputs.release-tag }}
+        run: gh release create --draft --target "${RELEASE_COMMIT}" "${RELEASE_TAG}" dist/* || exit 1
