@@ -44,11 +44,11 @@ jobs:
           PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
           PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
         run: |
-          git config --local user.email "${SIGNER_EMAIL}"
-          git config --local user.name "${SIGNER_NAME}"
-          git config --local user.signingkey "${PGP_KEY_ID}"
-          git config --local commit.gpgSign true
-          git config --local tag.gpgSign true
+          git config --global user.email "${SIGNER_EMAIL}"
+          git config --global user.name "${SIGNER_NAME}"
+          git config --global user.signingkey "${PGP_KEY_ID}"
+          git config --global commit.gpgSign true
+          git config --global tag.gpgSign true
 
       - name: Checkout
         uses: actions/checkout@v4
