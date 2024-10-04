@@ -74,6 +74,9 @@ jobs:
     permissions:
       deployments: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/delete-deployments
 
   tag-release:
@@ -129,4 +132,7 @@ jobs:
     permissions:
       deployments: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/delete-deployments
