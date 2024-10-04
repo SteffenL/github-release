@@ -14,7 +14,6 @@ jobs:
     uses: ./.github/workflows/build.yaml
 
   create-release-draft:
-    if: github.event_name == 'push' && startsWith(github.ref_name, 'release-prep-')
     needs:
       - build
     runs-on: ubuntu-22.04
