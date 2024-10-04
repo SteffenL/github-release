@@ -49,7 +49,7 @@ jobs:
       - name: Create checksum file
         run: |
           sha256sum * > SHA256SUMS
-          gpg --batch --detach-sign --armor SHA256SUMS
+          gpg --batch --pinentry-mode loopback --detach-sign --armor SHA256SUMS
         working-directory: dist
 
       - name: List artifacts
