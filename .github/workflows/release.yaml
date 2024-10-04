@@ -66,19 +66,6 @@ jobs:
           RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
         run: gh release create --draft "${RELEASE_TAG}" dist/*
 
-  create-github-release-draft-cleanup:
-    if: always()
-    needs:
-      - create-github-release-draft
-    runs-on: ubuntu-22.04
-    permissions:
-      deployments: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - uses: ./.github/actions/delete-deployments
-
   tag-release:
     needs:
       - create-github-release-draft
@@ -124,7 +111,7 @@ jobs:
           RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
         run: gh release edit --verify-tag "${RELEASE_TAG}"
 
-  tag-release-cleanup:
+  delete-deployments:
     if: always()
     needs:
       - tag-release
