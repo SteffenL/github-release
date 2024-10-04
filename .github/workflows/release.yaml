@@ -23,6 +23,7 @@ jobs:
 
   create-github-release-draft:
     needs:
+      - build
       - vars
     runs-on: ubuntu-22.04
     permissions:
