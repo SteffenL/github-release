@@ -1,0 +1,92 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Git commit to release
+        required: true
+        type: string
+defaults:
+  run:
+    shell: bash
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+
+  create-release-draft:
+    if: github.event_name == 'push' && startsWith(github.ref_name, 'release-prep-')
+    needs:
+      - build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    environment:
+      name: production
+    steps:
+      - id: vars
+        run: |
+          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
+
+      - name: Import PGP private key
+        env:
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
+          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+        run: |
+          gpg --batch --import <<EOF
+          ${PGP_PRIVATE_KEY}
+          EOF
+          gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
+          5
+          y
+          EOF
+
+      - name: Set up Git for signing
+        env:
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
+          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+        run: |
+          git config --local user.email "${SIGNER_EMAIL}"
+          git config --local user.name "${SIGNER_NAME}"
+          git config --local user.signingkey "${PGP_KEY_ID}"
+          git config --local commit.gpgSign true
+          git config --local tag.gpgSign true
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Create checksum file
+        env:
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
+          PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
+        run: |
+          sha256sum * > SHA256SUMS
+          gpg --batch --pinentry-mode loopback --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
+          ${PGP_KEY_PASSPHRASE}
+          EOF
+        working-directory: dist
+
+      - name: List artifacts
+        run: find dist/ || exit 1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-checksums
+          path: |
+            dist/*.asc
+            dist/*SUMS
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_TAG: ${{ steps.vars.outputs.release-tag }}
+        run: gh release create --draft --target "${RELEASE_COMMIT}" "${RELEASE_TAG}" dist/* || exit 1

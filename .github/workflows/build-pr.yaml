@@ -1,0 +1,13 @@
+name: Build PR
+on:
+  workflow_call:
+defaults:
+  run:
+    shell: bash
+jobs:
+  build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Dummy task
+        run: echo Hello
