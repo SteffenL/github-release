@@ -11,6 +11,9 @@ jobs:
       release-version: ${{ steps.vars.outputs.release-version }}
       release-tag: ${{ steps.vars.outputs.release-version }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - id: vars
         run: |
           echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
@@ -18,7 +21,7 @@ jobs:
   build:
     uses: ./.github/workflows/build.yaml
 
-  create-github-release-draft:
+  create-checksum:
     needs:
       - build
       - vars
@@ -65,9 +68,9 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  publish-github-release:
+  create-github-release-draft:
     needs:
-      - create-github-release-draft
+      - create-checksum
       - vars
     runs-on: ubuntu-22.04
     permissions:
