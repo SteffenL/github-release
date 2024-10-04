@@ -31,18 +31,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Import PGP private key
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
-        run: |
-          gpg --batch --import <<EOF
-          ${PGP_PRIVATE_KEY}
-          EOF
-          gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
-          5
-          y
-          EOF
+      - name: Set up signing
+        uses: ./.github/workflows/setup-sign
+        with:
+          pgp-key-id: ${{ vars.PGP_KEY_ID }}
+          pgp-key-passphrase: ${{ secrets.PGP_KEY_PASSPHRASE }}
+          pgp-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
+          git-user-email: ${{ vars.GIT_USER_EMAIL }}
+          git-user-name: ${{ vars.GIT_USER_NAME }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -51,14 +47,9 @@ jobs:
           path: dist
 
       - name: Create checksum file
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
         run: |
           sha256sum * > SHA256SUMS
-          gpg --batch --pinentry-mode loopback --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
-          ${PGP_KEY_PASSPHRASE}
-          EOF
+          gpg --batch --detach-sign --armor SHA256SUMS
         working-directory: dist
 
       - name: List artifacts
@@ -91,29 +82,13 @@ jobs:
         run: |
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
-      - name: Import PGP private key
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
-        run: |
-          gpg --batch --import <<EOF
-          ${PGP_PRIVATE_KEY}
-          EOF
-          gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
-          5
-          y
-          EOF
-
-      - name: Set up Git for signing
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
-        run: |
-          git config --global user.email "${SIGNER_EMAIL}"
-          git config --global user.name "${SIGNER_NAME}"
-          git config --global user.signingkey "${PGP_KEY_ID}"
-          git config --global commit.gpgSign true
-          git config --global tag.gpgSign true
+      - name: Set up signing
+        uses: ./.github/workflows/setup-sign
+        with:
+          pgp-key-id: ${{ vars.PGP_KEY_ID }}
+          pgp-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
+          git-user-email: ${{ vars.GIT_USER_EMAIL }}
+          git-user-name: ${{ vars.GIT_USER_NAME }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -143,29 +118,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Import PGP private key
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
-        run: |
-          gpg --batch --import <<EOF
-          ${PGP_PRIVATE_KEY}
-          EOF
-          gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
-          5
-          y
-          EOF
-
-      - name: Set up Git for signing
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
-        run: |
-          git config --global user.email "${SIGNER_EMAIL}"
-          git config --global user.name "${SIGNER_NAME}"
-          git config --global user.signingkey "${PGP_KEY_ID}"
-          git config --global commit.gpgSign true
-          git config --global tag.gpgSign true
+      - name: Set up signing
+        uses: ./.github/workflows/setup-sign
+        with:
+          pgp-key-id: ${{ vars.PGP_KEY_ID }}
+          pgp-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
+          git-user-email: ${{ vars.GIT_USER_EMAIL }}
+          git-user-name: ${{ vars.GIT_USER_NAME }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4

@@ -1,0 +1,52 @@
+name: Set up signing
+description: Set up GPG and Git for signing
+inputs:
+  git-user-email:
+    description: Git user e-mail address
+    required: true
+  git-user-name:
+    description: Git user name
+    required: true
+  pgp-key-id:
+    description: PGP key ID
+    required: true
+  pgp-key-passphrase:
+    description: PGP key passphrase
+    required: true
+  pgp-private-key:
+    description: PGP private key
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Import PGP private key
+      env:
+        PGP_KEY_ID: ${{ inputs.pgp-key-id }}
+        PGP_KEY_PASSPHRASE: ${{ inputs.pgp-key-passphrase }}
+        PGP_PRIVATE_KEY: ${{ inputs.pgp-private-key }}
+      run: |
+        gpg --batch --import <<EOF
+        ${PGP_PRIVATE_KEY}
+        EOF
+        gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
+        5
+        y
+        gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" passwd <<EOF
+        ${PGP_KEY_PASSPHRASE}
+
+        y
+        EOF
+      shell: bash
+
+    - name: Set up Git for signing
+      env:
+        GIT_USER_EMAIL: ${{ inputs.git-user-email }}
+        GIT_USER_NAME: ${{ inputs.git-user-name }}
+        PGP_KEY_ID: ${{ inputs.pgp-key-id }}
+      run: |
+        git config --global user.email "${GIT_USER_EMAIL}"
+        git config --global user.name "${GIT_USER_NAME}"
+        git config --global user.signingkey "${PGP_KEY_ID}"
+        git config --global commit.gpgSign true
+        git config --global tag.gpgSign true
+      shell: bash
