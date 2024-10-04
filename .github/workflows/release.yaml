@@ -19,7 +19,7 @@ jobs:
           echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
   build:
-    uses: ./.github/actions/build.yaml
+    uses: ./.github/workflows/build.yaml
 
   create-github-release-draft:
     needs:
@@ -93,7 +93,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up signing
-        uses: ./.github/workflows/setup-sign
+        uses: ./.github/actions/setup-sign
         with:
           pgp-key-id: ${{ vars.PGP_KEY_ID }}
           pgp-key-passphrase: ${{ secrets.PGP_KEY_PASSPHRASE }}
