@@ -22,6 +22,9 @@ jobs:
         run: sha256sum * > SHA256SUMS
         working-directory: dist
 
+      - name: List artifacts
+        run: find dist/ || exit 1
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
