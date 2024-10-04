@@ -42,6 +42,7 @@ jobs:
         uses: ./.github/workflows/setup-sign
         with:
           pgp-key-id: ${{ vars.PGP_KEY_ID }}
+          pgp-key-passphrase: ${{ secrets.PGP_KEY_PASSPHRASE }}
           pgp-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
           git-user-email: ${{ vars.GIT_USER_EMAIL }}
           git-user-name: ${{ vars.GIT_USER_NAME }}
@@ -82,6 +83,7 @@ jobs:
         uses: ./.github/workflows/setup-sign
         with:
           pgp-key-id: ${{ vars.PGP_KEY_ID }}
+          pgp-key-passphrase: ${{ secrets.PGP_KEY_PASSPHRASE }}
           pgp-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
           git-user-email: ${{ vars.GIT_USER_EMAIL }}
           git-user-name: ${{ vars.GIT_USER_NAME }}
