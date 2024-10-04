@@ -19,22 +19,31 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Import PGP private key
+    - name: "PGP: Import private key"
       env:
-        PGP_KEY_ID: ${{ inputs.pgp-key-id }}
-        PGP_KEY_PASSPHRASE: ${{ inputs.pgp-key-passphrase }}
         PGP_PRIVATE_KEY: ${{ inputs.pgp-private-key }}
       run: |
-        echo "Importing private key."
         gpg --batch --pinentry-mode loopback --import <<EOF
         ${PGP_PRIVATE_KEY}
         EOF
-        echo "Setting owner trust (ultimate)."
+      shell: bash
+
+    - name: "PGP: Set key owner trust"
+      env:
+        PGP_KEY_ID: ${{ inputs.pgp-key-id }}
+      run: |
+        ultimate_trust=5
         gpg --batch --pinentry-mode loopback --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
-        5
+        ${ultimate_trust}
         y
         EOF
-        echo "Removing passphrase."
+      shell: bash
+
+    - name: "PGP: Remove passphrase"
+      env:
+        PGP_KEY_ID: ${{ inputs.pgp-key-id }}
+        PGP_KEY_PASSPHRASE: ${{ inputs.pgp-key-passphrase }}
+      run: |
         gpg --batch --pinentry-mode loopback --command-fd 0 --edit-key "${PGP_KEY_ID}" passwd <<EOF
         ${PGP_KEY_PASSPHRASE}
 
@@ -42,7 +51,7 @@ runs:
         EOF
       shell: bash
 
-    - name: Set up Git for signing
+    - name: "Git: Configure for signing"
       env:
         GIT_USER_EMAIL: ${{ inputs.git-user-email }}
         GIT_USER_NAME: ${{ inputs.git-user-name }}
