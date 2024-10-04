@@ -26,16 +26,16 @@ runs:
         PGP_PRIVATE_KEY: ${{ inputs.pgp-private-key }}
       run: |
         echo "Importing private key."
-        gpg --batch --import <<EOF
+        gpg --batch --pinentry-mode loopback --import <<EOF
         ${PGP_PRIVATE_KEY}
         EOF
         echo "Setting owner trust (ultimate)."
-        gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
+        gpg --batch --pinentry-mode loopback --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
         5
         y
         EOF
         echo "Removing passphrase."
-        gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" passwd <<EOF
+        gpg --batch --pinentry-mode loopback --command-fd 0 --edit-key "${PGP_KEY_ID}" passwd <<EOF
         ${PGP_KEY_PASSPHRASE}
 
         y
