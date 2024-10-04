@@ -21,56 +21,8 @@ jobs:
   build:
     uses: ./.github/workflows/build.yaml
 
-  create-checksum:
-    needs:
-      - build
-      - vars
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    environment:
-      name: production
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up signing
-        uses: ./.github/workflows/setup-sign
-        with:
-          pgp-key-id: ${{ vars.PGP_KEY_ID }}
-          pgp-key-passphrase: ${{ secrets.PGP_KEY_PASSPHRASE }}
-          pgp-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
-          git-user-email: ${{ vars.GIT_USER_EMAIL }}
-          git-user-name: ${{ vars.GIT_USER_NAME }}
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-      - name: Create checksum file
-        run: |
-          sha256sum * > SHA256SUMS
-          gpg --batch --pinentry-mode loopback --detach-sign --armor SHA256SUMS
-        working-directory: dist
-
-      - name: List artifacts
-        run: find dist/ || exit 1
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-checksums
-          path: |
-            dist/*.asc
-            dist/*SUMS
-          retention-days: 1
-          if-no-files-found: error
-
   create-github-release-draft:
     needs:
-      - create-checksum
       - vars
     runs-on: ubuntu-22.04
     permissions:
@@ -98,6 +50,10 @@ jobs:
         with:
           name: dist
           path: dist
+
+      - name: Sign artifacts
+        run: gpg --batch --pinentry-mode loopback --detach-sign --armor SHA256SUMS
+        working-directory: dist
 
       - name: List artifacts
         run: find dist/ || exit 1

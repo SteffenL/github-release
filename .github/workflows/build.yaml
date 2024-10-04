@@ -18,6 +18,10 @@ jobs:
           echo "a" > a.txt
           echo "b" > b.txt
 
+      - name: Create checksum file
+        run: sha256sum * > SHA256SUMS
+        working-directory: dist
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
