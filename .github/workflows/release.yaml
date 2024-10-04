@@ -19,7 +19,7 @@ jobs:
           echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
   build:
-    uses: ./.github/workflows/build.yaml
+    uses: ./.github/actions/build.yaml
 
   create-github-release-draft:
     needs:
@@ -39,7 +39,7 @@ jobs:
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
       - name: Set up signing
-        uses: ./.github/workflows/setup-sign
+        uses: ./.github/actions/setup-sign
         with:
           pgp-key-id: ${{ vars.PGP_KEY_ID }}
           pgp-key-passphrase: ${{ secrets.PGP_KEY_PASSPHRASE }}
@@ -65,6 +65,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
         run: gh release create --draft "${RELEASE_TAG}" dist/*
+
+  create-github-release-draft-cleanup:
+    if: always()
+    needs:
+      - create-github-release-draft
+    runs-on: ubuntu-22.04
+    permissions:
+      deployments: write
+    steps:
+      - uses: ./.github/actions/delete-deployments
 
   tag-release:
     needs:
@@ -111,7 +121,7 @@ jobs:
           RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
         run: gh release edit --verify-tag "${RELEASE_TAG}"
 
-  delete-github-deployments:
+  tag-release-cleanup:
     if: always()
     needs:
       - tag-release
@@ -119,28 +129,4 @@ jobs:
     permissions:
       deployments: write
     steps:
-      - name: Delete inactive deployments
-        uses: actions/github-script@v7
-        env:
-          GITHUB_SHA_HEAD: ${{ github.event.pull_request.head.sha }}
-        with:
-          # https://github.com/actions/runner/issues/2120#issuecomment-1336193335
-          script: |
-            const { sha } = context;
-            const { owner, repo } = context.repo;
-            const deployments = await github.rest.repos.listDeployments({ owner, repo, sha });
-            await Promise.all(
-              deployments.data.map(async (deployment) => {
-                await github.rest.repos.createDeploymentStatus({
-                  owner,
-                  repo,
-                  deployment_id: deployment.id,
-                  state: "inactive"
-                });
-                return github.rest.repos.deleteDeployment({
-                  owner,
-                  repo,
-                  deployment_id: deployment.id
-                });
-              })
-            );
+      - uses: ./.github/actions/delete-deployments
