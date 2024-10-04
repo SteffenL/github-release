@@ -110,7 +110,7 @@ jobs:
 
   tag-release:
     needs:
-      - publish-github-release
+      - create-github-release-draft
       - vars
     runs-on: ubuntu-22.04
     permissions:
