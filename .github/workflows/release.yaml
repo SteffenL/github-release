@@ -52,7 +52,7 @@ jobs:
           path: dist
 
       - name: Sign artifacts
-        run: gpg --batch --detach-sign --armor SHA256SUMS
+        run: gpg --batch --pinentry-mode loopback --detach-sign --armor SHA256SUMS
         working-directory: dist
 
       - name: List artifacts

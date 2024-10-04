@@ -46,7 +46,7 @@ runs:
       run: |
         gpg --batch --pinentry-mode loopback --command-fd 0 --edit-key "${PGP_KEY_ID}" passwd <<EOF
         ${PGP_KEY_PASSPHRASE}
-
+        $()
         y
         EOF
       shell: bash
