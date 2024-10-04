@@ -8,9 +8,68 @@ jobs:
   build:
     uses: ./.github/workflows/build.yaml
 
-  create-release-draft:
+  create-github-release-draft:
     needs:
       - build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    environment:
+      name: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: vars
+        run: |
+          echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
+
+      - name: Import PGP private key
+        env:
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
+          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+        run: |
+          gpg --batch --import <<EOF
+          ${PGP_PRIVATE_KEY}
+          EOF
+          gpg --batch --command-fd 0 --edit-key "${PGP_KEY_ID}" trust <<EOF
+          5
+          y
+          EOF
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Create checksum file
+        env:
+          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
+          PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
+        run: |
+          sha256sum * > SHA256SUMS
+          gpg --batch --pinentry-mode loopback --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
+          ${PGP_KEY_PASSPHRASE}
+          EOF
+        working-directory: dist
+
+      - name: List artifacts
+        run: find dist/ || exit 1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-checksums
+          path: |
+            dist/*.asc
+            dist/*SUMS
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-github-release:
+    needs:
+      - create-github-release-draft
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -54,29 +113,8 @@ jobs:
           name: dist
           path: dist
 
-      - name: Create checksum file
-        env:
-          PGP_KEY_ID: ${{ vars.PGP_KEY_ID }}
-          PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
-        run: |
-          sha256sum * > SHA256SUMS
-          gpg --batch --pinentry-mode loopback --detach-sign --armor --passphrase-fd 0 SHA256SUMS <<EOF
-          ${PGP_KEY_PASSPHRASE}
-          EOF
-        working-directory: dist
-
       - name: List artifacts
         run: find dist/ || exit 1
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-checksums
-          path: |
-            dist/*.asc
-            dist/*SUMS
-          retention-days: 1
-          if-no-files-found: error
 
       - name: Create GitHub Release
         env:
