@@ -2,8 +2,8 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      commit:
-        description: Git commit to release
+      ref:
+        description: Git reference to release
         required: true
         type: string
 defaults:
@@ -25,7 +25,7 @@ jobs:
     steps:
       - id: vars
         run: |
-          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
+          echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
       - name: Import PGP private key
         env:
@@ -53,6 +53,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -87,6 +89,6 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_COMMIT: ${{ inputs.commit }}
-          RELEASE_TAG: ${{ steps.vars.outputs.release-tag }}
-        run: gh release create --draft --target "${RELEASE_COMMIT}" "${RELEASE_TAG}" dist/* || exit 1
+          RELEASE_TARGET: ${{ inputs.ref }}
+          RELEASE_TAG: ${{ steps.vars.outputs.release-version }}
+        run: gh release create --draft --target "${RELEASE_TARGET}" "${RELEASE_TAG}" dist/* || exit 1
