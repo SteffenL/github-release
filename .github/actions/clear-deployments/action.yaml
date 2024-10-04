@@ -15,8 +15,7 @@ runs:
               await github.rest.repos.createDeploymentStatus({
                 owner,
                 repo,
-                deployment_id: deployment.id,
-                state: "inactive"
+                deployment_id: deployment.id
               });
               return github.rest.repos.deleteDeployment({
                 owner,
