@@ -1,0 +1,9 @@
+name: Build Additional
+on:
+  workflow_call:
+defaults:
+  run:
+    shell: bash
+jobs:
+  build:
+    uses: ./.github/workflows/reusable/build-common.yaml

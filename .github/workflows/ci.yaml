@@ -6,11 +6,18 @@ defaults:
   run:
     shell: bash
 jobs:
-  build:
-    uses: ./.github/workflows/build.yaml
+  build-baseline:
+    uses: ./.github/workflows/reusable/build-baseline.yaml
 
-  build-pr:
+  prepare-artifacts:
+    needs:
+      - build-baseline
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: ./.github/actions/prepare-artifacts
+
+  build-additional:
     if: github.event_name == 'pull_request'
     needs:
-      - build
-    uses: ./.github/workflows/build-pr.yaml
+      - build-baseline
+    uses: ./.github/workflows/reusable/build-additional.yaml

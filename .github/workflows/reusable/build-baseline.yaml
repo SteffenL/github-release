@@ -1,0 +1,20 @@
+name: Build Baseline
+on:
+  workflow_call:
+defaults:
+  run:
+    shell: bash
+jobs:
+  build:
+    uses: ./.github/workflows/reusable/build-common.yaml
+
+  upload-artifacts:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist_files_${{ github.run_id }}_${{ github.run_number }}
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
