@@ -4,16 +4,9 @@ on:
     branches:
       - '*'
       - '!release/*'
-  pull_request:
 defaults:
   run:
     shell: bash
 jobs:
   build-baseline:
     uses: ./.github/workflows/build-baseline.yaml
-
-  build-additional:
-    if: github.event_name == 'pull_request'
-    needs:
-      - build-baseline
-    uses: ./.github/workflows/build-additional.yaml

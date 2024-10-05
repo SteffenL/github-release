@@ -1,0 +1,14 @@
+name: PR
+on:
+  pull_request:
+    branches:
+      - '*'
+      - '!release/*'
+defaults:
+  run:
+    shell: bash
+jobs:
+  build-additional:
+    needs:
+      - build-baseline
+    uses: ./.github/workflows/build-additional.yaml
