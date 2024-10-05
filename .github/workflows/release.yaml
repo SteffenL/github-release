@@ -20,6 +20,7 @@ jobs:
       - id: vars
         run: |
           echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
+          echo "run-id=${{ github.run_id }}_${{ github.run_number }}_${{ github.run_attempt }}" >> "${GITHUB_OUTPUT}"
 
   build:
     uses: ./.github/workflows/build-baseline.yaml
@@ -44,7 +45,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist_files_${{ github.run_id }}_${{ github.run_number }}
+          name: dist_files_${{ needs.vars.outputs.run-id }}
           path: dist
 
       - name: Set up signing
@@ -67,7 +68,7 @@ jobs:
       - name: Upload signature artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist_signatures_${{ github.run_id }}_${{ github.run_number }}
+          name: dist_signatures_${{ needs.vars.outputs.run-id }}
           path: |
             dist/*.asc
             dist/*SUMS
@@ -106,9 +107,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: |
-            dist_checksums_${{ github.run_id }}_${{ github.run_number }}
-            dist_files_${{ github.run_id }}_${{ github.run_number }}
-            dist_signatures_${{ github.run_id }}_${{ github.run_number }}
+            dist_files_${{ needs.vars.outputs.run-id }}
+            dist_signatures_${{ needs.vars.outputs.run-id }}
           path: dist
 
       - name: List artifacts

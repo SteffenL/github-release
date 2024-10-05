@@ -8,5 +8,5 @@ jobs:
   build:
     uses: ./.github/workflows/build-common.yaml
     with:
-      artifact-name: dist_files_${{ github.run_id }}_${{ github.run_number }}
+      artifact-name: dist_files_${{ github.run_id }}_${{ github.run_number }}_${{ github.run_attempt }}
       upload-artifacts: true
