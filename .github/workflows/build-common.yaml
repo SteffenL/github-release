@@ -9,7 +9,7 @@ on:
       upload-artifacts:
         type: boolean
         description: Whether to upload artifacts
-        required: true
+        required: false
         default: false
 defaults:
   run:
@@ -29,7 +29,7 @@ jobs:
           echo "b" > b.txt
 
       - name: Upload artifacts
-        if: fromJSON(inputs.upload-artifacts)
+        if: fromJSON(inputs.upload-artifacts || false)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
