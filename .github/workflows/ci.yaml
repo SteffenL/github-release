@@ -1,13 +1,7 @@
 name: CI
 on:
   push:
-    branches:
-      - '*'
-      - '!release/*'
   pull_request:
-    branches:
-      - '*'
-      - '!release/*'
 defaults:
   run:
     shell: bash
