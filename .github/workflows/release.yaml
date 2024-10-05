@@ -1,9 +1,14 @@
 name: Release
 on:
-  workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - 'release/*'
+      - master
+    types:
+      - closed
+      - labeled
+      - opened
+      - reopened
+      - synchronize
 defaults:
   run:
     shell: bash
@@ -12,6 +17,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   vars:
+    if: "startsWith(github.head_ref, 'releases/') || contains(github.event.pull_request.labels.*.name, 'type: release')"
     runs-on: ubuntu-22.04
     outputs:
       release-tag: ${{ steps.vars.outputs.release-version }}
@@ -122,6 +128,7 @@ jobs:
           git push origin "${RELEASE_TAG}"
 
       - name: Publish release
+        if: github.event.pull_request.merged
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
@@ -140,17 +147,3 @@ jobs:
 
       - name: Delete deployments
         uses: ./.github/actions/delete-deployments
-
-  cleanup-branch:
-    if: always()
-    needs:
-      - tag-release
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - name: Delete release branch
-        if: success() && startsWith(github.ref_name, 'release/')
-        env:
-          REF: ${{ github.ref_name }}
-        run: git push origin ":${REF}"
