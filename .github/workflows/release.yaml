@@ -16,7 +16,7 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  vars:
+  init:
     if: "startsWith(github.head_ref, 'releases/') || contains(github.event.pull_request.labels.*.name, 'type: release')"
     runs-on: ubuntu-22.04
     outputs:
@@ -39,7 +39,7 @@ jobs:
   create-github-release-draft:
     needs:
       - build
-      - vars
+      - init
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -52,7 +52,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist_files_${{ needs.vars.outputs.run-id }}
+          name: dist_files_${{ needs.init.outputs.run-id }}
           path: dist
 
       - name: Set up signing
@@ -75,7 +75,7 @@ jobs:
       - name: Upload signature artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist_signatures_${{ needs.vars.outputs.run-id }}
+          name: dist_signatures_${{ needs.init.outputs.run-id }}
           path: |
             dist/*.asc
             dist/*SUMS
@@ -85,13 +85,13 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
+          RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: gh release create --draft "${RELEASE_TAG}" dist/*
 
   tag-release:
     needs:
       - create-github-release-draft
-      - vars
+      - init
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -113,7 +113,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: dist_*_${{ needs.vars.outputs.run-id }}
+          pattern: dist_*_${{ needs.init.outputs.run-id }}
           path: dist
 
       - name: List artifacts
@@ -121,8 +121,8 @@ jobs:
 
       - name: Tag release
         env:
-          RELEASE_VERSION: ${{ needs.vars.outputs.release-version }}
-          RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
+          RELEASE_VERSION: ${{ needs.init.outputs.release-version }}
+          RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: |
           git tag --sign --message "Release ${RELEASE_VERSION}" "${RELEASE_TAG}"
           git push origin "${RELEASE_TAG}"
@@ -131,7 +131,7 @@ jobs:
         if: github.event.pull_request.merged
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.vars.outputs.release-tag }}
+          RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: gh release edit --verify-tag --draft=false "${RELEASE_TAG}"
 
   cleanup-deployments:
