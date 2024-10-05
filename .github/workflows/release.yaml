@@ -21,19 +21,12 @@ jobs:
         run: |
           echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
-  build-baseline:
+  build:
     uses: ./.github/workflows/build-baseline.yaml
-
-  prepare-artifacts:
-    needs:
-      - build-baseline
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: ./.github/actions/prepare-artifacts
 
   create-github-release-draft:
     needs:
-      - prepare-artifacts
+      - build
       - vars
     runs-on: ubuntu-22.04
     permissions:
@@ -48,6 +41,12 @@ jobs:
         run: |
           echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist_files_${{ github.run_id }}_${{ github.run_number }}
+          path: dist
+
       - name: Set up signing
         uses: ./.github/actions/setup-sign
         with:
@@ -57,17 +56,10 @@ jobs:
           git-user-email: ${{ vars.GIT_USER_EMAIL }}
           git-user-name: ${{ vars.GIT_USER_NAME }}
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: |
-            dist_checksums_${{ github.run_id }}_${{ github.run_number }}
-            dist_files_${{ github.run_id }}_${{ github.run_number }}
-          path: dist
-
       - name: Sign artifacts
-        run: gpg --batch --pinentry-mode loopback --detach-sign --armor SHA256SUMS
-        working-directory: dist
+        uses: ./.github/actions/sign-artifacts
+        with:
+          directory: dist
 
       - name: List artifacts
         run: find dist/
@@ -76,7 +68,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist_signatures_${{ github.run_id }}_${{ github.run_number }}
-          path: dist/*.asc
+          path: |
+            dist/*.asc
+            dist/*SUMS
           retention-days: 1
           if-no-files-found: error
 

@@ -9,13 +9,6 @@ jobs:
   build-baseline:
     uses: ./.github/workflows/build-baseline.yaml
 
-  prepare-artifacts:
-    needs:
-      - build-baseline
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: ./.github/actions/prepare-artifacts
-
   build-additional:
     if: github.event_name == 'pull_request'
     needs:
