@@ -5,7 +5,7 @@ on:
       artifact-name:
         type: string
         description: Name of uploaded artifact
-        required: true
+        required: false
       upload-artifacts:
         type: boolean
         description: Whether to upload artifacts
