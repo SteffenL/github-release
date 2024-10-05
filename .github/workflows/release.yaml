@@ -11,14 +11,16 @@ jobs:
   vars:
     runs-on: ubuntu-22.04
     outputs:
-      release-version: ${{ steps.vars.outputs.release-version }}
       release-tag: ${{ steps.vars.outputs.release-version }}
+      release-version: ${{ steps.vars.outputs.release-version }}
+      run-id: ${{ steps.vars.outputs.run-id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - id: vars
         run: |
+          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
           echo "release-version=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
           echo "run-id=${{ github.run_id }}_${{ github.run_number }}_${{ github.run_attempt }}" >> "${GITHUB_OUTPUT}"
 
@@ -37,10 +39,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - id: vars
-        run: |
-          echo "release-tag=$(cat version.txt)" >> "${GITHUB_OUTPUT}"
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
