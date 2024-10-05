@@ -7,14 +7,6 @@ defaults:
 jobs:
   build:
     uses: ./.github/workflows/build-common.yaml
-
-  upload-artifacts:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist_files_${{ github.run_id }}_${{ github.run_number }}
-          path: dist
-          retention-days: 1
-          if-no-files-found: error
+    with:
+      artifact-name: dist_files_${{ github.run_id }}_${{ github.run_number }}
+      upload-artifacts: true

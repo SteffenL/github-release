@@ -1,6 +1,16 @@
 name: Build
 on:
   workflow_call:
+    inputs:
+      artifact-name:
+        type: string
+        description: Name of uploaded artifact
+        required: true
+      upload-artifacts:
+        type: boolean
+        description: Whether to upload artifacts
+        required: true
+        default: false
 defaults:
   run:
     shell: bash
@@ -17,3 +27,12 @@ jobs:
           cd dist
           echo "a" > a.txt
           echo "b" > b.txt
+
+      - name: Upload artifacts
+        if: fromJSON(inputs.upload-artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
