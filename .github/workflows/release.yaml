@@ -137,7 +137,7 @@ jobs:
   cleanup-branch:
     if: success() && startsWith(github.ref_name, 'release/')
     needs:
-      - tag-release
+      - publish-release
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -153,7 +153,7 @@ jobs:
   cleanup-deployments:
     if: always()
     needs:
-      - tag-release
+      - publish-release
     runs-on: ubuntu-22.04
     permissions:
       deployments: write
