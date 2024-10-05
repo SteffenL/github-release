@@ -7,7 +7,7 @@ defaults:
     shell: bash
 jobs:
   build-baseline:
-    uses: ./.github/workflows/reusable/build-baseline.yaml
+    uses: ./.github/workflows/build-baseline.yaml
 
   prepare-artifacts:
     needs:
@@ -20,4 +20,4 @@ jobs:
     if: github.event_name == 'pull_request'
     needs:
       - build-baseline
-    uses: ./.github/workflows/reusable/build-additional.yaml
+    uses: ./.github/workflows/build-additional.yaml
