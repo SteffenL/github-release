@@ -6,8 +6,6 @@ on:
     types:
       - closed
       - labeled
-      - opened
-      - reopened
       - synchronize
 defaults:
   run:
