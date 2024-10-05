@@ -29,18 +29,10 @@ jobs:
   build:
     uses: ./.github/workflows/build-baseline.yaml
 
-  pre-create-github-release-draft:
+  create-github-release-draft:
     needs:
       - build
       - init
-    runs-on: ubuntu-22.04
-    steps:
-      - run: echo "Awaiting approval to create GitHub release draft." >> "${GITHUB_STEP_SUMMARY}"
-
-  create-github-release-draft:
-    needs:
-      - init
-      - pre-create-github-release-draft
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -88,15 +80,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: gh release create --draft "${RELEASE_TAG}" dist/*
-
-      - name: Update status
-        run: echo "Please review the release draft and edit if needed. Don't publish the draft manually." >> "${GITHUB_STEP_SUMMARY}"
-
-  pre-publish-release:
-    needs: create-github-release-draft
-    runs-on: ubuntu-22.04
-    steps:
-      - run: echo "Awaiting approval to publish release." >> "${GITHUB_STEP_SUMMARY}"
 
   publish-release:
     needs:
