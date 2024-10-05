@@ -87,6 +87,7 @@ jobs:
         run: gh release create --draft "${RELEASE_TAG}" dist/*
 
   tag-release:
+    if: github.event.pull_request.merged
     needs:
       - create-github-release-draft
       - init
