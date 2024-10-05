@@ -12,14 +12,16 @@ runs:
     - name: Create checksum file
       run: sha256sum * > SHA256SUMS
       working-directory: dist
+      shell: bash
 
     - name: List artifacts
       run: find dist/
+      shell: bash
 
     - name: Upload checksum artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: dist_checksum_${{ github.run_id }}_${{ github.run_number }}
-        path: dist
+        name: dist_checksums_${{ github.run_id }}_${{ github.run_number }}
+        path: dist/*SUMS
         retention-days: 1
         if-no-files-found: error

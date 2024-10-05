@@ -6,7 +6,7 @@ defaults:
     shell: bash
 jobs:
   build:
-    uses: ./.github/workflows/reusable/build-common.yaml
+    uses: ./.github/workflows/build-common.yaml
 
   upload-artifacts:
     runs-on: ubuntu-22.04

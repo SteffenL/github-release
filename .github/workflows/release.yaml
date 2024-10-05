@@ -61,7 +61,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: |
-            dist_checksum_${{ github.run_id }}_${{ github.run_number }}
+            dist_checksums_${{ github.run_id }}_${{ github.run_number }}
             dist_files_${{ github.run_id }}_${{ github.run_number }}
           path: dist
 
@@ -71,6 +71,14 @@ jobs:
 
       - name: List artifacts
         run: find dist/
+
+      - name: Upload signature artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist_signatures_${{ github.run_id }}_${{ github.run_number }}
+          path: dist/*.asc
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Create GitHub Release
         env:
@@ -103,7 +111,10 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: |
+            dist_checksums_${{ github.run_id }}_${{ github.run_number }}
+            dist_files_${{ github.run_id }}_${{ github.run_number }}
+            dist_signatures_${{ github.run_id }}_${{ github.run_number }}
           path: dist
 
       - name: List artifacts
