@@ -2,6 +2,7 @@ name: CI
 on:
   push:
     branches:
+      - '*'
       - '!release/*'
   pull_request:
 defaults:
