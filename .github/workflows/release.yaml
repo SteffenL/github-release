@@ -90,15 +90,13 @@ jobs:
         run: gh release create --draft "${RELEASE_TAG}" dist/*
 
       - name: Update status
-        run: echo "Created release draft. Please verify and edit the draft if needed, but do not publish it." >> "${GITHUB_STEP_SUMMARY}"
+        run: echo "Please review the release draft and edit if needed. Don't publish the draft manually." >> "${GITHUB_STEP_SUMMARY}"
 
   pre-tag-release:
-    needs:
-      - create-github-release-draft
-      - init
+    needs: create-github-release-draft
     runs-on: ubuntu-22.04
     steps:
-      - run: echo "Awaiting approval to tag release." >> "${GITHUB_STEP_SUMMARY}"
+      - run: echo "Awaiting approval to tag release in source control." >> "${GITHUB_STEP_SUMMARY}"
 
   tag-release:
     needs:
@@ -122,15 +120,6 @@ jobs:
           git-user-email: ${{ vars.GIT_USER_EMAIL }}
           git-user-name: ${{ vars.GIT_USER_NAME }}
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: dist_*_${{ needs.init.outputs.run-id }}
-          path: dist
-
-      - name: List artifacts
-        run: find dist/
-
       - name: Tag release
         env:
           RELEASE_VERSION: ${{ needs.init.outputs.release-version }}
@@ -144,9 +133,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: gh release edit --verify-tag --draft=false "${RELEASE_TAG}"
-
-      - name: Update status
-        run: echo "Release has been published." >> "${GITHUB_STEP_SUMMARY}"
 
   cleanup-branch:
     if: always()
