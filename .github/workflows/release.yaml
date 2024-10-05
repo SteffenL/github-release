@@ -29,10 +29,20 @@ jobs:
   build:
     uses: ./.github/workflows/build-baseline.yaml
 
-  create-github-release-draft:
+  pre-create-github-release-draft:
     needs:
       - build
       - init
+    runs-on: ubuntu-22.04
+    steps:
+      - run: |
+          echo "### Release" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- Awaiting approval to create GitHub release draft." >> "${GITHUB_STEP_SUMMARY}"
+
+  create-github-release-draft:
+    needs:
+      - init
+      - pre-create-github-release-draft
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -81,6 +91,18 @@ jobs:
           RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: gh release create --draft "${RELEASE_TAG}" dist/*
 
+      - run: echo "- Created release draft. Please verify and edit the draft if needed, but do not publish it." >> "${GITHUB_STEP_SUMMARY}"
+
+  pre-tag-release:
+    needs:
+      - create-github-release-draft
+      - init
+    runs-on: ubuntu-22.04
+    env:
+      RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
+    steps:
+      - run: echo "- Awaiting approval to tag release (${RELEASE_TAG})." >> "${GITHUB_STEP_SUMMARY}"
+
   tag-release:
     needs:
       - create-github-release-draft
@@ -120,11 +142,15 @@ jobs:
           git tag --sign --message "Release ${RELEASE_VERSION}" "${RELEASE_TAG}"
           git push origin "${RELEASE_TAG}"
 
+      - run: echo "- Created and pushed Git tag (${RELEASE_TAG})." >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.init.outputs.release-tag }}
         run: gh release edit --verify-tag --draft=false "${RELEASE_TAG}"
+
+      - run: echo "- Release has been published." >> "${GITHUB_STEP_SUMMARY}"
 
   cleanup-branch:
     if: always()
