@@ -92,13 +92,13 @@ jobs:
       - name: Update status
         run: echo "Please review the release draft and edit if needed. Don't publish the draft manually." >> "${GITHUB_STEP_SUMMARY}"
 
-  pre-tag-release:
+  pre-publish-release:
     needs: create-github-release-draft
     runs-on: ubuntu-22.04
     steps:
-      - run: echo "Awaiting approval to tag release in source control." >> "${GITHUB_STEP_SUMMARY}"
+      - run: echo "Awaiting approval to publish release." >> "${GITHUB_STEP_SUMMARY}"
 
-  tag-release:
+  publish-release:
     needs:
       - create-github-release-draft
       - init
